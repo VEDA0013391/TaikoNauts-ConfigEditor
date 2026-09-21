@@ -1,8 +1,36 @@
 const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const fs = require('fs/promises');
 const path = require('path');
 
+// ログ出力設定
+autoUpdater.logger = require('electron-log');
+autoUpdater.logger.transports.file.level = 'info';
+
 let win;
+
+// アップデートイベントの監視と処理
+function setupAutoUpdater(win) {
+    // 新しいバージョンが見つかった時
+    autoUpdater.on('update-available', () => {
+        console.log('新しいアップデートが見つかりました。ダウンロード中...');
+    });
+
+    // ダウンロードが完了した時
+    autoUpdater.on('update-downloaded', () => {
+        dialog.showMessageBox(win, {
+            type: 'info',
+            title: 'アップデート準備完了',
+            message: '新しいバージョンがダウンロードされました。アプリを再起動して更新を適用しますか？',
+            buttons: ['今すぐ再起動', '後で']
+        }).then((result) => {
+            if (result.response === 0) {
+                // アプリを終了してアップデートをインストール
+                autoUpdater.quitAndInstall();
+            }
+        });
+    });
+}
 
 // ディレクトリ内を再帰的に探索してTaikoNautsのフォルダを探す
 async function findTaikoNauts(directory) {
@@ -39,7 +67,7 @@ function createWindow() {
         height: 800,
         minWidth: 900,
         minHeight: 600,
-        icon: path.join(__dirname, '..', 'icon01.ico'),
+        icon: path.join(__dirname, 'icon01.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -155,7 +183,7 @@ ipcMain.handle('get-image-folder-items', async (_event, directory, relativePath,
     }
 });
 
-// 指定パス直下のサブフォルダ一覧をで取得
+// 指定パス直下のサブフォルダ一覧を取得
 ipcMain.handle('get-folder-items', async (_event, directory, relativePath) => {
     try {
         const targetDirectory = path.join(directory, relativePath);
@@ -213,8 +241,15 @@ ipcMain.handle('get-player-list', async (_event, rootDirectory) => {
     }
 });
 
+// アプリケーションの起動と初期化
 app.whenReady().then(() => {
     createWindow();
+
+    // パッケージ化されている場合に自動更新チェックを実行
+    if (app.isPackaged) {
+        setupAutoUpdater(win);
+        autoUpdater.checkForUpdatesAndNotify();
+    }
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {

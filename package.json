@@ -1,6 +1,6 @@
 {
     "name": "taiko-config-editor",
-    "version": "1.0.0",
+    "version": "2026.921.1623",
     "description": "TaikoNauts JSON configuration editor",
     "main": "src/main.js",
     "scripts": {
@@ -14,12 +14,23 @@
     "build": {
         "appId": "jp.veda0013391.taikoconfigeditor",
         "productName": "Taiko Config Editor",
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "VEDA0013391",
+                "repo": "TaikoNauts-SettingsEditor"
+            }
+        ],
         "files": [
             "src/**/*"
         ],
         "win": {
             "target": "nsis",
-            "icon": "icon01.ico"
+            "icon": "src/icon01.ico"
         }
+    },
+    "dependencies": {
+        "electron-log": "^5.4.4",
+        "electron-updater": "^6.8.9"
     }
 }
