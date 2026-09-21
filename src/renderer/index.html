@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>TaikøNauts Settings Editor</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="app">
+        <header class="app-header">
+            <div>
+                <h1>TaikøNauts Settings Editor</h1>
+                <p>TaikøNautsの設定を編集します</p>
+            </div>
+
+            <div class="user-select-wrapper" id="userSelectWrapper" style="display: none;">
+                <label for="userSelect">ユーザー:</label>
+                <select id="userSelect" class="user-select-dropdown"></select>
+            </div>
+            
+            <button
+                id="selectDirectoryBtn"
+                class="button primary"
+            >
+                フォルダを選択
+            </button>
+        </header>
+
+        <div class="app-body">
+            <aside class="sidebar">
+                <div class="sidebar-title">
+                    設定
+                </div>
+
+                <nav
+                    id="categoryList"
+                    class="category-list"
+                >
+                    <button
+                        class="category-item active"
+                        data-category="player"
+                    >
+                        プレイヤー情報
+                    </button>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <div
+                    id="welcomeView"
+                    class="welcome-view"
+                >
+                    <div class="welcome-icon">
+                        <img src="../../icon00.png" alt="TaikøNauts Settings Editor Icon">
+                    </div>
+
+                    <h2>TaikøNauts Settings Editor</h2>
+
+                    <p id="welcomeMessage">
+                        TaikøNautsのフォルダを選択してください。
+                    </p>
+
+                    <button
+                        id="welcomeSelectDirectoryBtn"
+                        class="button primary"
+                    >
+                        フォルダを選択
+                    </button>
+                </div>
+
+                <div
+                    id="settingsView"
+                    class="settings-view hidden"
+                >
+                    <div class="page-header">
+                        <h2 id="pageTitle">
+                            プレイヤー情報
+                        </h2>
+
+                        <p id="pageDescription">
+                            プレイヤーに関する設定を編集します。
+                        </p>
+                    </div>
+
+                    <div id="settingsContainer"></div>
+
+                    <div class="save-area">
+                        <span id="saveStatus"></span>
+
+                        <button
+                            id="saveBtn"
+                            class="button primary"
+                        >
+                            保存する
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="app-footer">
+            <span id="directoryPath">
+                フォルダが選択されていません
+            </span>
+        </footer>
+    </div>
+
+    <script
+        type="module"
+        src="js/app.js"
+    ></script>
+</body>
+</html>

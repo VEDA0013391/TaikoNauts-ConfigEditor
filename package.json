@@ -1,0 +1,25 @@
+{
+    "name": "taiko-config-editor",
+    "version": "1.0.0",
+    "description": "TaikoNauts JSON configuration editor",
+    "main": "src/main.js",
+    "scripts": {
+        "dev": "electron .",
+        "build": "electron-builder"
+    },
+    "devDependencies": {
+        "electron": "^44.4.3",
+        "electron-builder": "^26.15.3"
+    },
+    "build": {
+        "appId": "jp.veda0013391.taikoconfigeditor",
+        "productName": "Taiko Config Editor",
+        "files": [
+            "src/**/*"
+        ],
+        "win": {
+            "target": "nsis",
+            "icon": "icon01.ico"
+        }
+    }
+}
