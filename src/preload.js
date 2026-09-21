@@ -30,4 +30,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // ユーザーリストの取得
     getPlayerList: (directory) => ipcRenderer.invoke('get-player-list', directory),
+
+    // アップデート機能用の追加
+    onUpdateStatus: (callback) => ipcRenderer.on('update-status', (_event, value) => callback(value)),
+    startUpdateDownload: () => ipcRenderer.invoke('start-update-download'),
+    quitAndInstall: () => ipcRenderer.invoke('quit-and-install')
 });

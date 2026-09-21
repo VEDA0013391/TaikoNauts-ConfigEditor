@@ -7,28 +7,52 @@ const path = require('path');
 autoUpdater.logger = require('electron-log');
 autoUpdater.logger.transports.file.level = 'info';
 
+// 自動ダウンロードを無効化
+autoUpdater.autoDownload = false;
+
 let win;
 
-// アップデートイベントの監視と処理
 function setupAutoUpdater(win) {
-    // 新しいバージョンが見つかった時
-    autoUpdater.on('update-available', () => {
-        console.log('新しいアップデートが見つかりました。ダウンロード中...');
+    // 画面が準備完了したらアップデートチェックを実行
+    win.once('ready-to-show', () => {
+        console.log('[AutoUpdater] 更新チェックを開始します...');
+        autoUpdater.checkForUpdates();
     });
 
-    // ダウンロードが完了した時
-    autoUpdater.on('update-downloaded', () => {
-        dialog.showMessageBox(win, {
-            type: 'info',
-            title: 'アップデート準備完了',
-            message: '新しいバージョンがダウンロードされました。アプリを再起動して更新を適用しますか？',
-            buttons: ['今すぐ再起動', '後で']
-        }).then((result) => {
-            if (result.response === 0) {
-                // アプリを終了してアップデートをインストール
-                autoUpdater.quitAndInstall();
-            }
+    autoUpdater.on('checking-for-update', () => {
+        console.log('[AutoUpdater] GitHubの最新リリースを確認中...');
+        win.webContents.send('update-status', { status: 'checking' });
+    });
+
+    autoUpdater.on('update-available', (info) => {
+        console.log(`[AutoUpdater] 新しいバージョンが見つかりました: v${info.version}`);
+        win.webContents.send('update-status', {
+            status: 'available',
+            version: info.version
         });
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+        console.log(`[AutoUpdater] 現在のバージョンは最新です (現在のバージョン: v${info.version})`);
+        win.webContents.send('update-status', { status: 'latest' });
+    });
+
+    autoUpdater.on('error', (err) => {
+        console.error('[AutoUpdater] エラーが発生しました:', err);
+        win.webContents.send('update-status', { status: 'error', error: err.message });
+    });
+
+    autoUpdater.on('download-progress', (progressObj) => {
+        console.log(`[AutoUpdater] ダウンロード進捗: ${Math.floor(progressObj.percent)}%`);
+        win.webContents.send('update-status', {
+            status: 'downloading',
+            percent: Math.floor(progressObj.percent)
+        });
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        console.log('[AutoUpdater] ダウンロードが完了しました。');
+        win.webContents.send('update-status', { status: 'downloaded' });
     });
 }
 
@@ -239,6 +263,16 @@ ipcMain.handle('get-player-list', async (_event, rootDirectory) => {
         console.error('プレイヤー一覧の取得に失敗しました:', error);
         return [];
     }
+});
+
+// レンダラーからのダウンロード要求
+ipcMain.handle('start-update-download', async () => {
+    autoUpdater.downloadUpdate();
+});
+
+// レンダラーからの再起動・インストール要求
+ipcMain.handle('quit-and-install', () => {
+    autoUpdater.quitAndInstall();
 });
 
 // アプリケーションの起動と初期化

@@ -6,6 +6,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
     <title>TaikøNauts Settings Editor</title>
 
     <link rel="stylesheet" href="css/style.css">
@@ -19,9 +20,16 @@
                 <p>TaikøNautsの設定を編集します</p>
             </div>
 
-            <div class="user-select-wrapper" id="userSelectWrapper" style="display: none;">
-                <label for="userSelect">ユーザー:</label>
-                <select id="userSelect" class="user-select-dropdown"></select>
+            <div class="user-selection-wrapper">
+                <div class="user-select-wrapper" id="userSelectWrapper" style="display: none;">
+                    <label for="userSelect">ユーザー:</label>
+                    <select id="userSelect" class="user-select-dropdown"></select>
+                </div>
+                <!-- アップデート状態・ボタン表示エリア -->
+                <div id="updateContainer" class="update-container">
+                    <span id="updateStatusText" class="update-status-text">更新確認中...</span>
+                    <button id="updateBtn" class="update-btn" style="display: none;"></button>
+                </div>
             </div>
             
             <button

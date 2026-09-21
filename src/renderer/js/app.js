@@ -253,3 +253,73 @@ window.addEventListener('skin-path-changed', async (event) => {
 
 // 起動時にTaikoNautsフォルダの自動読み込みを実行
 autoLoadTaikoNauts();
+
+const updateStatusText = document.getElementById('updateStatusText');
+const updateBtn = document.getElementById('updateBtn');
+
+// アップデート状態イベントの受取
+window.electronAPI.onUpdateStatus((data) => {
+    // 受信した生のデータをコンソールに出力
+    console.log('[AutoUpdater] ステータスを受信:', data);
+
+    if (!updateStatusText || !updateBtn) {
+        console.warn('[AutoUpdater] UI要素が見つかりません。DOMの設定を確認してください。');
+        return;
+    }
+
+    switch (data.status) {
+        case 'checking':
+            console.log('[AutoUpdater] アップデートを確認中...');
+            updateStatusText.textContent = '更新確認中...';
+            updateStatusText.style.display = 'inline';
+            updateBtn.style.display = 'none';
+            break;
+
+        case 'latest':
+            console.log('[AutoUpdater] アプリは最新バージョンです。');
+            updateStatusText.textContent = '最新バージョンです';
+            updateStatusText.style.display = 'inline';
+            updateBtn.style.display = 'none';
+            break;
+
+        case 'available':
+            console.log(`[AutoUpdater] 新バージョン発見: v${data.version}`);
+            // 最新版が見つかったらテキストを非表示にし、ボタンを表示
+            updateStatusText.style.display = 'none';
+            updateBtn.textContent = `v${data.version} にアップデート`;
+            updateBtn.className = 'update-btn';
+            updateBtn.style.display = 'inline-block';
+            updateBtn.disabled = false;
+            updateBtn.onclick = () => {
+                console.log('[AutoUpdater] アップデートのダウンロードを開始します...');
+                updateBtn.textContent = 'ダウンロード中 (0%)...';
+                updateBtn.className = 'update-btn downloading';
+                updateBtn.disabled = true;
+                window.electronAPI.startUpdateDownload();
+            };
+            break;
+
+        case 'downloading':
+            console.log(`[AutoUpdater] ダウンロード進捗: ${data.percent}%`);
+            updateBtn.textContent = `ダウンロード中 (${data.percent}%)...`;
+            break;
+
+        case 'downloaded':
+            console.log('[AutoUpdater] ダウンロード完了。再起動待機中。');
+            updateBtn.textContent = '再起動して更新を適用';
+            updateBtn.className = 'update-btn';
+            updateBtn.disabled = false;
+            updateBtn.onclick = () => {
+                console.log('[AutoUpdater] 再起動・インストール要求を送信します。');
+                window.electronAPI.quitAndInstall();
+            };
+            break;
+
+        case 'error':
+            console.error('[AutoUpdater] エラーが発生しました:', data.error);
+            updateStatusText.textContent = '更新チェック失敗';
+            updateStatusText.style.display = 'inline';
+            updateBtn.style.display = 'none';
+            break;
+    }
+});
