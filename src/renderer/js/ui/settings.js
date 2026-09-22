@@ -88,6 +88,21 @@ function collectSettings(container, category, configs) {
                 value = Number(element.value);
                 break;
 
+            case 'select': {
+                const selectedOption = fieldDefinition.options?.find(
+                    (option) => String(
+                        typeof option === 'object' ? option.value : option
+                    ) === String(element.value)
+                );
+
+                const optionValue = typeof selectedOption === 'object'
+                    ? selectedOption.value
+                    : selectedOption;
+
+                value = optionValue;
+                break;
+            }
+
             default:
                 value = element.value;
                 break;
