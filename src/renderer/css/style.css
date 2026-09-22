@@ -806,6 +806,55 @@ button {
     margin-top: 4px;
 }
 
+.setting-select {
+    height: 36px;
+    min-width: 200px;
+    padding: 0 32px 0 10px;
+
+    color: var(--text);
+    background-color: var(--surface);
+
+    /* ドロップダウン右側の矢印アイコンをテーマカラーに合わせて表示 */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371808c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    outline: none;
+    cursor: pointer;
+
+    /* ブラウザ標準の矢印を無効化 */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+}
+
+/* ホバー時の効果 */
+.setting-select:hover {
+    border-color: var(--primary);
+    background-color: var(--surface-secondary);
+}
+
+/* フォーカス（選択中）時の効果 */
+.setting-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* 選択肢（option）要素の背景・文字色 */
+.setting-select option {
+    color: var(--text);
+    background-color: var(--surface);
+    padding: 8px;
+}
+
 @media (max-width: 1000px) {
     .main-content {
         padding: 24px;
@@ -850,6 +899,10 @@ button {
     }
 
     .text-input {
+        width: 100%;
+    }
+
+    .setting-select {
         width: 100%;
     }
 }

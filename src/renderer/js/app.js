@@ -1,5 +1,6 @@
 import configDefinitions from '../../configs/index.js';
 import playerConfig from '../../configs/player.js';
+import skinConfig from '../../configs/skin.js';
 import { loadConfigs, saveConfigs } from './configManager.js';
 import { setSelectedDirectory, setSkinPath } from './fields/context.js';
 import { renderCategories, setActiveCategory } from './ui/category.js';
@@ -34,6 +35,18 @@ function updatePlayerConfigPaths(userId) {
     });
 }
 
+// skinConfigのパステンプレートを更新する処理
+function updateSkinConfigPaths(skinPath) {
+    if (!skinConfig || !skinConfig.files) return;
+
+    skinConfig.files.forEach((file) => {
+        if (file.pathTemplate) {
+            // スキンパスを適用
+            file.path = file.pathTemplate.replace('{skinName}', skinPath);
+        }
+    });
+}
+
 // ユーザー一覧を取得してドロップダウンを構築する
 async function loadUserDropdown(directory) {
     if (!userSelect || !userSelectWrapper) return;
@@ -59,7 +72,7 @@ async function loadUserDropdown(directory) {
 
         userSelectWrapper.style.display = 'flex';
     } catch (error) {
-        console.error('ユーザー一覧の構築に失敗しました。', error);
+        console.error('ユーザー一覧の構築に失敗しました', error);
         userSelectWrapper.style.display = 'none';
     }
 }
@@ -74,6 +87,11 @@ async function loadDirectory(directory) {
         // スキンパスを取得してコンテキストに設定
         const currentSkinPath = await window.electronAPI.getSkinPath(directory);
         setSkinPath(currentSkinPath);
+
+        // スキン設定のパスを更新
+        if (currentSkinPath) {
+            updateSkinConfigPaths(currentSkinPath);
+        }
 
         // ユーザー一覧ドロップダウンを読み込み, パスを初期化
         await loadUserDropdown(directory);
@@ -132,7 +150,7 @@ async function selectCategory(categoryId) {
         settingsContainer.innerHTML = '';
         const errorMessage = document.createElement('div');
         errorMessage.className = 'setting-error';
-        errorMessage.textContent = '設定の読み込みに失敗しました。';
+        errorMessage.textContent = '設定の読み込みに失敗しました';
         settingsContainer.append(errorMessage);
     }
 }
@@ -165,7 +183,7 @@ async function autoLoadTaikoNauts() {
 
         if (!directory) {
             if (welcomeMessage) {
-                welcomeMessage.textContent = 'TaikoNauts-latestが見つかりませんでした。';
+                welcomeMessage.textContent = 'TaikoNauts-latestが見つかりませんでした';
             }
             return;
         }
@@ -173,11 +191,11 @@ async function autoLoadTaikoNauts() {
         localStorage.setItem('taikoNautsDirectory', directory);
         await loadDirectory(directory);
     } catch (error) {
-        console.error('TaikoNauts-latestの自動読み込みに失敗しました。', error);
+        console.error('TaikoNauts-latestの自動読み込みに失敗しました', error);
         localStorage.removeItem('taikoNautsDirectory');
 
         if (welcomeMessage) {
-            welcomeMessage.textContent = 'TaikoNauts-latestの読み込みに失敗しました。';
+            welcomeMessage.textContent = 'TaikoNauts-latestの読み込みに失敗しました';
         }
     }
 }
@@ -197,14 +215,14 @@ async function saveCurrentCategory() {
 
     try {
         await saveConfigs(selectedDirectory, currentCategory, configs);
-        setSaveStatus(saveStatus, '保存しました。');
+        setSaveStatus(saveStatus, '保存しました');
 
         if (skinPathChanged) {
             window.location.reload();
         }
     } catch (error) {
         console.error(error);
-        setSaveStatus(saveStatus, '保存に失敗しました。');
+        setSaveStatus(saveStatus, '保存に失敗しました');
     } finally {
         setSaveButtonState(saveBtn, false);
     }
@@ -247,7 +265,7 @@ window.addEventListener('skin-path-changed', async (event) => {
         await saveConfigs(selectedDirectory, gameCategory, configs);
         window.location.reload();
     } catch (error) {
-        console.error('スキン設定の保存に失敗しました。', error);
+        console.error('スキン設定の保存に失敗しました', error);
     }
 });
 
@@ -263,7 +281,7 @@ window.electronAPI.onUpdateStatus((data) => {
     console.log('[AutoUpdater] ステータスを受信:', data);
 
     if (!updateStatusText || !updateBtn) {
-        console.warn('[AutoUpdater] UI要素が見つかりません。DOMの設定を確認してください。');
+        console.warn('[AutoUpdater] UI要素が見つかりません。DOMの設定を確認してください');
         return;
     }
 
@@ -276,7 +294,7 @@ window.electronAPI.onUpdateStatus((data) => {
             break;
 
         case 'latest':
-            console.log('[AutoUpdater] アプリは最新バージョンです。');
+            console.log('[AutoUpdater] アプリは最新バージョンです');
             updateStatusText.textContent = '最新バージョンです';
             updateStatusText.style.display = 'inline';
             updateBtn.style.display = 'none';
@@ -305,12 +323,12 @@ window.electronAPI.onUpdateStatus((data) => {
             break;
 
         case 'downloaded':
-            console.log('[AutoUpdater] ダウンロード完了。再起動待機中。');
+            console.log('[AutoUpdater] ダウンロード完了。再起動待機中');
             updateBtn.textContent = '再起動して更新を適用';
             updateBtn.className = 'update-btn';
             updateBtn.disabled = false;
             updateBtn.onclick = () => {
-                console.log('[AutoUpdater] 再起動・インストール要求を送信します。');
+                console.log('[AutoUpdater] 再起動・インストール要求を送信します');
                 window.electronAPI.quitAndInstall();
             };
             break;

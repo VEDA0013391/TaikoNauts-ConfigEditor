@@ -1,6 +1,6 @@
 {
-    "name": "taiko-config-editor",
-    "version": "2026.921.1646",
+    "name": "TaikoNauts-Config-Editor",
+    "version": "2026.922.1908",
     "description": "TaikoNauts JSON configuration editor",
     "main": "src/main.js",
     "scripts": {
@@ -13,7 +13,7 @@
     },
     "build": {
         "appId": "jp.veda0013391.taikoconfigeditor",
-        "productName": "Taiko Config Editor",
+        "productName": "TaikoNauts Config Editor",
         "publish": [
             {
                 "provider": "github",

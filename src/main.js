@@ -265,6 +265,36 @@ ipcMain.handle('get-player-list', async (_event, rootDirectory) => {
     }
 });
 
+// スキンのFont/フォルダ内のファイル一覧を取得
+ipcMain.handle('get-font-files', async (_event, directory, skinPath) => {
+    try {
+        if (!directory || !skinPath) return [];
+
+        // 例: <directory>/Skins/R-Style/Font/
+        const fontFolderPath = path.join(directory, skinPath, 'Font');
+
+        // フォルダが存在するか確認
+        try {
+            await fs.access(fontFolderPath);
+        } catch {
+            return []; // 存在しない場合は空配列を返す
+        }
+
+        const files = await fs.readdir(fontFolderPath, { withFileTypes: true });
+
+        // フォントファイルを抽出
+        const fontExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+        const fontFiles = files
+            .filter((file) => file.isFile() && fontExtensions.includes(path.extname(file.name).toLowerCase()))
+            .map((file) => file.name);
+
+        return fontFiles;
+    } catch (error) {
+        console.error('フォント一覧の取得に失敗しました:', error);
+        return [];
+    }
+});
+
 // レンダラーからのダウンロード要求
 ipcMain.handle('start-update-download', async () => {
     autoUpdater.downloadUpdate();

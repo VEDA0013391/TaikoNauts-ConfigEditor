@@ -7,6 +7,7 @@ import { createImageSelectorField } from './imageSelector.js';
 import { createImageFolderSelectorField } from './imageFolderSelector.js';
 import { createFolderSelectorField } from './folderSelector.js';
 import { createSkinSelectorField } from './skinSelector.js';
+import { createFontSelectField } from './fontSelect.js'; // ★ 追加
 
 // typeに基づきフィールド要素を生成
 async function createField(fieldDefinition, value, configName) {
@@ -37,6 +38,9 @@ async function createField(fieldDefinition, value, configName) {
 
         case 'skinSelector':
             return await createSkinSelectorField(fieldDefinition, value, configName);
+
+        case 'fontSelect':
+            return await createFontSelectField(fieldDefinition, value, configName);
 
         default:
             // 未定義の型の場合はデフォルトでテキストフィールドを生成

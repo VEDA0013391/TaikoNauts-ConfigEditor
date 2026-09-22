@@ -34,5 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // アップデート機能用の追加
     onUpdateStatus: (callback) => ipcRenderer.on('update-status', (_event, value) => callback(value)),
     startUpdateDownload: () => ipcRenderer.invoke('start-update-download'),
-    quitAndInstall: () => ipcRenderer.invoke('quit-and-install')
+    quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
+
+    // スキンフォント一覧取得用のIPCを追加
+    getFontFiles: (directory, skinPath) => ipcRenderer.invoke('get-font-files', directory, skinPath)
 });
