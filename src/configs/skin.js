@@ -30,6 +30,12 @@ export default {
                     label: 'ネームプレート英字フォント',
                     type: 'fontSelect',
                     description: 'ネームプレートの英数字部分に使用するフォントです。'
+                },
+                {
+                    key: 'fontUploader',
+                    label: 'フォントをアップロード',
+                    type: 'fontUpload',
+                    description: '選択したフォントファイルをFontフォルダへ移動します。反映のためリロードします'
                 }
             ]
         }

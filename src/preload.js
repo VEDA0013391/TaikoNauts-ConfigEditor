@@ -34,5 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
 
     // スキンフォント一覧取得用のIPCを追加
-    getFontFiles: (directory, skinPath) => ipcRenderer.invoke('get-font-files', directory, skinPath)
+    getFontFiles: (directory, skinPath) => ipcRenderer.invoke('get-font-files', directory, skinPath),
+
+    // フォントファイルを選択してSkinのFontフォルダへ移動する
+    uploadFontFile: (directory, skinPath) => ipcRenderer.invoke('upload-font-file', directory, skinPath)
 });

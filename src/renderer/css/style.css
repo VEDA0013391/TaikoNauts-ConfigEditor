@@ -619,6 +619,26 @@ button {
     align-items: center;
 }
 
+.font-upload-control {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.font-upload-status {
+    margin-top: 0;
+    text-align: right;
+}
+
+.font-upload-status.success {
+    color: var(--success);
+}
+
+.font-upload-status.error {
+    color: var(--error);
+}
+
 .button {
     display: inline-flex;
     align-items: center;

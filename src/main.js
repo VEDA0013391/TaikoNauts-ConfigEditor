@@ -71,6 +71,20 @@ async function listNumericSubfolders(directory) {
     return entries.filter((entry) => entry.isDirectory() && /^\d+$/.test(entry.name));
 }
 
+// ファイルを別ディレクトリへ移動する(別ドライブ間などrenameできない場合はコピー+削除で代替)
+async function moveFileSafe(sourcePath, destPath) {
+    try {
+        await fs.rename(sourcePath, destPath);
+    } catch (error) {
+        if (error.code === 'EXDEV') {
+            await fs.copyFile(sourcePath, destPath);
+            await fs.unlink(sourcePath);
+        } else {
+            throw error;
+        }
+    }
+}
+
 // ディレクトリ内を再帰的に探索してTaikoNautsのフォルダを探す
 async function findTaikoNauts(directory) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
@@ -296,6 +310,45 @@ ipcMain.handle('get-font-files', async (_event, directory, skinPath) => {
         console.error('フォント一覧の取得に失敗しました:', error);
         return [];
     }
+});
+
+// フォントファイルを選択し、現在のスキンのFontフォルダへ移動する
+ipcMain.handle('upload-font-file', async (_event, directory, skinPath) => {
+    if (!directory || !skinPath) {
+        throw new Error('スキンが設定されていません。');
+    }
+
+    const result = await dialog.showOpenDialog(win, {
+        title: 'フォントファイルを選択',
+        properties: ['openFile', 'multiSelections'],
+        filters: [
+            { name: 'フォントファイル', extensions: ['ttf', 'otf', 'woff', 'woff2'] }
+        ]
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+        return null;
+    }
+
+    const fontFolderPath = path.join(directory, skinPath, 'Font');
+    await fs.mkdir(fontFolderPath, { recursive: true });
+
+    const fileNames = [];
+
+    for (const sourcePath of result.filePaths) {
+        const fileName = path.basename(sourcePath);
+        const destPath = path.join(fontFolderPath, fileName);
+
+        try {
+            await moveFileSafe(sourcePath, destPath);
+            fileNames.push(fileName);
+        } catch (error) {
+            console.error(`フォントファイルの移動に失敗しました: ${sourcePath}`, error);
+            throw new Error(`フォントファイルの移動に失敗しました。\n${fileName}`);
+        }
+    }
+
+    return { fileNames };
 });
 
 // レンダラーからのダウンロード要求
