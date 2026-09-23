@@ -1,5 +1,6 @@
 import { createFieldBase } from './base.js';
 import { getSkinRelativePath, getSelectedDirectory, getSkinPath } from './context.js';
+import { appendSelectOptions } from './selectHelper.js';
 
 // Skinのサブフォルダ一覧を取得しドロップダウンメニューで表示
 async function createFolderSelectorField(fieldDefinition, value, configName) {
@@ -57,16 +58,10 @@ async function createFolderSelectorField(fieldDefinition, value, configName) {
     select.dataset.key = fieldDefinition.key;
 
     // 取得したフォルダ一覧を<option>要素として追加
-    items.forEach((item, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = item;
-
-        if (index === Number(value)) {
-            option.selected = true;
-        }
-
-        select.append(option);
+    appendSelectOptions(select, items, {
+        getOptionValue: (item, index) => index,
+        getOptionLabel: (item) => item,
+        isSelected: (optionValue) => optionValue === Number(value)
     });
 
     control.append(select);

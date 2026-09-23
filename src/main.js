@@ -56,6 +56,21 @@ function setupAutoUpdater(win) {
     });
 }
 
+// BOM除去のうえJSONファイルを安全に読み込む共通処理
+// (read-json-file / get-skin-path / get-player-list で重複していた処理を統一)
+async function readJsonSafe(filePath) {
+    let content = await fs.readFile(filePath, 'utf8');
+    content = content.replace(/^\uFEFF/, ''); // UTF-8 BOMを除去
+    return JSON.parse(content);
+}
+
+// 指定ディレクトリ直下から「数字のみの名前」のフォルダを列挙する
+// (get-player-list / get-image-folder-items で重複していた抽出処理を統一)
+async function listNumericSubfolders(directory) {
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    return entries.filter((entry) => entry.isDirectory() && /^\d+$/.test(entry.name));
+}
+
 // ディレクトリ内を再帰的に探索してTaikoNautsのフォルダを探す
 async function findTaikoNauts(directory) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
@@ -136,9 +151,7 @@ ipcMain.handle('select-directory', async () => {
 // JSONファイルを読み込む
 ipcMain.handle('read-json-file', async (_event, filePath) => {
     try {
-        let content = await fs.readFile(filePath, 'utf8');
-        content = content.replace(/^\uFEFF/, ''); // UTF-8 BOMを除去
-        return JSON.parse(content);
+        return await readJsonSafe(filePath);
     } catch (error) {
         console.error(`JSONの読み込みに失敗しました: ${filePath}`, error);
         throw new Error(`JSONの読み込みに失敗しました。\n${filePath}`);
@@ -161,10 +174,7 @@ ipcMain.handle('write-json-file', async (_event, filePath, data) => {
 ipcMain.handle('get-skin-path', async (_event, directory) => {
     try {
         const gameConfigPath = path.join(directory, 'Config', 'GameConfig.json');
-        let content = await fs.readFile(gameConfigPath, 'utf8');
-        content = content.replace(/^\uFEFF/, '');
-
-        const gameConfig = JSON.parse(content);
+        const gameConfig = await readJsonSafe(gameConfigPath);
 
         if (typeof gameConfig.skinPath !== 'string') {
             throw new Error('GameConfig.jsonにskinPathがありません。');
@@ -181,13 +191,11 @@ ipcMain.handle('get-skin-path', async (_event, directory) => {
 ipcMain.handle('get-image-folder-items', async (_event, directory, relativePath, fileName) => {
     try {
         const targetDirectory = path.join(directory, relativePath);
-        const entries = await fs.readdir(targetDirectory, { withFileTypes: true });
+        const numericFolders = await listNumericSubfolders(targetDirectory);
 
         const items = [];
 
-        for (const entry of entries) {
-            if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
-
+        for (const entry of numericFolders) {
             const number = Number(entry.name);
             const imagePath = path.join(targetDirectory, entry.name, fileName);
 
@@ -227,22 +235,17 @@ ipcMain.handle('get-folder-items', async (_event, directory, relativePath) => {
 ipcMain.handle('get-player-list', async (_event, rootDirectory) => {
     try {
         const playerDataPath = path.join(rootDirectory, 'PlayerData');
-        const entries = await fs.readdir(playerDataPath, { withFileTypes: true });
+        const numericFolders = await listNumericSubfolders(playerDataPath);
 
         const players = [];
 
-        for (const entry of entries) {
-            // 数字のみのフォルダが対象
-            if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
-
+        for (const entry of numericFolders) {
             const userId = entry.name;
             const namePlatePath = path.join(playerDataPath, userId, 'NamePlateConfig.json');
             let name = '名称未設定';
 
             try {
-                let content = await fs.readFile(namePlatePath, 'utf8');
-                content = content.replace(/^\uFEFF/, '');
-                const json = JSON.parse(content);
+                const json = await readJsonSafe(namePlatePath);
                 if (json.name) {
                     name = json.name;
                 }

@@ -1,13 +1,15 @@
 import { createFieldBase } from './base.js';
+import { createPreviewSelector } from './previewSelector.js';
 import { getSkinRelativePath, getFileUrl, getSelectedDirectory, getSkinPath } from './context.js';
 
 // プレビュー付き画像選択フィールドの生成
 async function createImageFolderSelectorField(fieldDefinition, value, configName) {
-    const { field, control } = createFieldBase(fieldDefinition);
     const imageConfig = fieldDefinition.image;
 
     // スキンパス未設定時の表示制御
     if (!getSkinPath()) {
+        const { field, control } = createFieldBase(fieldDefinition);
+
         const errorMessage = document.createElement('span');
         errorMessage.className = 'setting-description';
         errorMessage.textContent = 'スキンが設定されていません。';
@@ -29,6 +31,7 @@ async function createImageFolderSelectorField(fieldDefinition, value, configName
     } catch (error) {
         console.error(error);
 
+        const { field, control } = createFieldBase(fieldDefinition);
         const errorMessage = document.createElement('span');
         errorMessage.className = 'setting-description';
         errorMessage.textContent = '画像の読み込みに失敗しました。';
@@ -39,6 +42,7 @@ async function createImageFolderSelectorField(fieldDefinition, value, configName
 
     // 使える画像が存在しない場合
     if (items.length === 0) {
+        const { field, control } = createFieldBase(fieldDefinition);
         const emptyMessage = document.createElement('span');
         emptyMessage.className = 'setting-description';
         emptyMessage.textContent = '使用可能なネームプレートがありません。';
@@ -53,36 +57,16 @@ async function createImageFolderSelectorField(fieldDefinition, value, configName
         currentItemIndex = 0;
     }
 
-    const selector = document.createElement('div');
-    selector.className = 'image-folder-selector';
+    const { field, previousButton, image, nextButton, label, hiddenInput } = createPreviewSelector(
+        fieldDefinition,
+        {
+            previewClass: 'thumbnail',
+            ariaPrev: '前のネームプレート',
+            ariaNext: '次のネームプレート'
+        }
+    );
 
-    // 前へ
-    const previousButton = document.createElement('button');
-    previousButton.type = 'button';
-    previousButton.className = 'image-selector-button';
-    previousButton.textContent = '<';
-    previousButton.setAttribute('aria-label', '前のネームプレート');
-
-    // プレビュー表示エリアと画像要素
-    const preview = document.createElement('div');
-    preview.className = 'image-folder-selector-preview';
-
-    const image = document.createElement('img');
     image.className = 'image-folder-selector-image';
-
-    // 次へ
-    const nextButton = document.createElement('button');
-    nextButton.type = 'button';
-    nextButton.className = 'image-selector-button';
-    nextButton.textContent = '>';
-    nextButton.setAttribute('aria-label', '次のネームプレート');
-
-    // ラベルと保存用非表示インプット
-    const label = document.createElement('span');
-    label.className = 'image-selector-label';
-
-    const hiddenInput = document.createElement('input');
-    hiddenInput.type = 'hidden';
     hiddenInput.dataset.config = configName;
     hiddenInput.dataset.key = fieldDefinition.key;
 
@@ -112,10 +96,6 @@ async function createImageFolderSelectorField(fieldDefinition, value, configName
         currentItemIndex++;
         updatePreview();
     });
-
-    preview.append(image);
-    selector.append(previousButton, preview, nextButton);
-    control.append(selector, label, hiddenInput);
 
     // 初期状態の表示適用
     updatePreview();

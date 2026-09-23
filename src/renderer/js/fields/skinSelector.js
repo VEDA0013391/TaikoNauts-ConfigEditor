@@ -1,5 +1,6 @@
 import { createFieldBase } from './base.js';
 import { getSelectedDirectory } from './context.js';
+import { appendSelectOptions } from './selectHelper.js';
 
 // Skins/ ディレクトリ内のフォルダ一覧を取得し、スキン選択セレクトボックスを生成する
 async function createSkinSelectorField(fieldDefinition, value, configName) {
@@ -46,16 +47,10 @@ async function createSkinSelectorField(fieldDefinition, value, configName) {
         .replace(/\/+$/, '');
 
     // オプション要素の生成、追加
-    items.forEach((item) => {
-        const option = document.createElement('option');
-        option.value = `Skins/${item}/`;
-        option.textContent = item;
-
-        if (item === currentSkin) {
-            option.selected = true;
-        }
-
-        select.append(option);
+    appendSelectOptions(select, items, {
+        getOptionValue: (item) => `Skins/${item}/`,
+        getOptionLabel: (item) => item,
+        isSelected: (optionValue, item) => item === currentSkin
     });
 
     // スキン変更時にカスタムイベントを通知

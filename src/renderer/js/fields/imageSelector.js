@@ -1,9 +1,8 @@
-import { createFieldBase } from './base.js';
+import { createPreviewSelector } from './previewSelector.js';
 import { getSkinImagePath } from './context.js';
 
 // スコアパネル画像選択フィールドを生成する
 function createImageSelectorField(fieldDefinition, value, configName) {
-    const { field, control } = createFieldBase(fieldDefinition);
     const imageConfig = fieldDefinition.image;
     const options = fieldDefinition.options ?? [];
     const count = imageConfig.count;
@@ -14,38 +13,19 @@ function createImageSelectorField(fieldDefinition, value, configName) {
         currentIndex = 0;
     }
 
-    const selector = document.createElement('div');
-    selector.className = 'image-selector';
+    const { field, previousButton, image, nextButton, label, hiddenInput } = createPreviewSelector(
+        fieldDefinition,
+        {
+            previewClass: 'score-panel',
+            ariaPrev: '前のスコアパネル',
+            ariaNext: '次のスコアパネル'
+        }
+    );
 
-    // 前へ
-    const previousButton = document.createElement('button');
-    previousButton.type = 'button';
-    previousButton.className = 'image-selector-button';
-    previousButton.textContent = '<';
-    previousButton.setAttribute('aria-label', '前のスコアパネル');
-
-    // プレビュー表示エリアと画像要素
-    const preview = document.createElement('div');
-    preview.className = 'image-selector-preview';
-
-    const image = document.createElement('img');
     image.className = 'image-selector-image';
     image.width = imageConfig.width;
     image.height = imageConfig.height * count;
 
-    // 次へボタン
-    const nextButton = document.createElement('button');
-    nextButton.type = 'button';
-    nextButton.className = 'image-selector-button';
-    nextButton.textContent = '>';
-    nextButton.setAttribute('aria-label', '次のスコアパネル');
-
-    // ラベルと保存用非表示インプット
-    const label = document.createElement('span');
-    label.className = 'image-selector-label';
-
-    const hiddenInput = document.createElement('input');
-    hiddenInput.type = 'hidden';
     hiddenInput.dataset.config = configName;
     hiddenInput.dataset.key = fieldDefinition.key;
 
@@ -74,10 +54,6 @@ function createImageSelectorField(fieldDefinition, value, configName) {
         currentIndex++;
         updatePreview();
     });
-
-    preview.append(image);
-    selector.append(previousButton, preview, nextButton);
-    control.append(selector, label, hiddenInput);
 
     // 初期状態の表示適用
     updatePreview();

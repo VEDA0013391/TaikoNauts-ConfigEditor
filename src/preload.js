@@ -18,15 +18,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     findTaikoNauts: () => ipcRenderer.invoke('find-taiko-nauts'),
 
     // 指定フォルダ内の画像アイテム一覧を取得する
-    getImageFolderItems: (directory, relativePath, fileName) => 
+    getImageFolderItems: (directory, relativePath, fileName) =>
         ipcRenderer.invoke('get-image-folder-items', directory, relativePath, fileName),
 
     // 指定フォルダ内のサブフォルダ、ファイル一覧を取得する
-    getFolderItems: (directory, relativePath) => 
+    getFolderItems: (directory, relativePath) =>
         ipcRenderer.invoke('get-folder-items', directory, relativePath),
-
-    // フォルダ選択ダイアログ呼び出し
-    selectDirectory: () => ipcRenderer.invoke('select-directory'),
 
     // ユーザーリストの取得
     getPlayerList: (directory) => ipcRenderer.invoke('get-player-list', directory),
