@@ -619,6 +619,131 @@ button {
     align-items: center;
 }
 
+.dan-generator-intro {
+    margin: 0 0 18px;
+}
+
+.dan-section-description {
+    padding: 0 20px;
+}
+
+.dan-section-action-button {
+    width: calc(100% - 40px);
+    margin: 4px 20px 18px;
+}
+
+.dan-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 12px 16px 0;
+}
+
+.dan-row-title {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.dan-row-remove-button {
+    flex-shrink: 0;
+
+    height: 30px;
+    padding: 0 12px;
+
+    color: var(--error);
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    font-size: 11px;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.dan-row-remove-button:hover:not(:disabled) {
+    background: #fff0f0;
+    border-color: var(--error);
+}
+
+.dan-row-remove-button:disabled {
+    cursor: default;
+
+    color: #b9c5cc;
+    background: #f3f6f8;
+}
+
+.dan-song-row,
+.dan-condition-row {
+    margin: 14px 20px;
+
+    background: var(--surface-secondary);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+
+.dan-song-row .setting-field,
+.dan-condition-row .setting-field {
+    min-height: auto;
+    padding: 10px 16px;
+}
+
+.dan-threshold-subrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 16px;
+
+    border-top: 1px dashed var(--border);
+}
+
+.dan-threshold-subrow .dan-threshold-label {
+    flex: 1;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dan-threshold-subrow .number-input {
+    width: 80px;
+}
+
+.dan-download-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+
+    padding: 14px 20px 20px;
+}
+
+.dan-download-status {
+    font-size: 12px;
+}
+
+.dan-download-status.success {
+    color: var(--success);
+}
+
+.dan-download-status.error {
+    color: var(--error);
+}
+
 .font-upload-control {
     display: flex;
     flex-direction: column;
@@ -661,6 +786,15 @@ button {
 
 .button:active {
     transform: translateY(1px);
+}
+
+.button:disabled {
+    cursor: default;
+
+    color: #b9c5cc;
+    background: #f3f6f8;
+
+    transform: none;
 }
 
 .button.primary {

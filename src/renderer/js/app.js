@@ -5,7 +5,13 @@ import { loadConfigs, saveConfigs } from './configManager.js';
 import { setSelectedDirectory, setSkinPath } from './fields/context.js';
 import { renderCategories, setActiveCategory } from './ui/category.js';
 import { renderSettings, collectSettings } from './ui/settings.js';
+import { renderDanGenerator } from './ui/danGenerator.js'; // ★ 追加: 段位道場ファイル作成ツール
 import { setPageInfo, setSaveStatus, setSaveButtonState, setDirectoryPath } from './ui/status.js';
+
+// 画面リロード後にどのカテゴリへ戻るかを覚えておくためのlocalStorageキー。
+// フォントアップロードやスキン切替のようにwindow.location.reload()を行う処理は、
+// このキーに頼って「元の画面」へ復帰する(autoLoadTaikoNauts側で参照)。
+const LAST_CATEGORY_STORAGE_KEY = 'taikoNautsLastCategory';
 
 let selectedDirectory = null;
 let currentCategory = null;
@@ -20,6 +26,7 @@ const pageDescription = document.getElementById('pageDescription');
 const settingsContainer = document.getElementById('settingsContainer');
 const saveStatus = document.getElementById('saveStatus');
 const saveBtn = document.getElementById('saveBtn');
+const saveArea = document.getElementById('saveArea'); // ★ 追加: 段位道場ツール表示時に隠す
 const directoryPath = document.getElementById('directoryPath');
 const selectDirectoryBtn = document.getElementById('selectDirectoryBtn');
 const welcomeSelectDirectoryBtn = document.getElementById('welcomeSelectDirectoryBtn');
@@ -78,7 +85,13 @@ async function loadUserDropdown(directory) {
 }
 
 // 指定されたディレクトリを読み込んでUIの切り替えを行う
-async function loadDirectory(directory) {
+// options.restoreCategory が true の場合、localStorageに保存された直前のカテゴリへ
+// 自動的に遷移する(フォントアップロード後のリロード等、アプリ側が自動で行う
+// window.location.reload()からの復帰専用。ユーザーが手動でフォルダを選び直した
+// 場合は常に先頭のカテゴリから開始する)。
+async function loadDirectory(directory, options = {}) {
+    const { restoreCategory = false } = options;
+
     try {
         selectedDirectory = directory;
         setSelectedDirectory(directory);
@@ -101,8 +114,19 @@ async function loadDirectory(directory) {
         welcomeView.classList.add('hidden');
         settingsView.classList.remove('hidden');
 
-        // 一番上のカテゴリを表示
-        const categoryId = currentCategory?.id ?? configDefinitions[0]?.id;
+        // 表示するカテゴリを決定
+        // 1. 既にメモリ上にcurrentCategoryがあればそれを優先
+        // 2. restoreCategory指定時はlocalStorageに保存された直前のカテゴリを復元
+        // 3. どちらもなければ先頭のカテゴリ
+        const restoredCategoryId = restoreCategory
+            ? localStorage.getItem(LAST_CATEGORY_STORAGE_KEY)
+            : null;
+        const isRestoredCategoryValid = restoredCategoryId
+            && configDefinitions.some((category) => category.id === restoredCategoryId);
+
+        const categoryId = currentCategory?.id
+            ?? (isRestoredCategoryValid ? restoredCategoryId : null)
+            ?? configDefinitions[0]?.id;
 
         if (categoryId) {
             await selectCategory(categoryId);
@@ -134,10 +158,24 @@ async function selectCategory(categoryId) {
 
     currentCategory = category;
 
+    // 次回リロード時に同じカテゴリへ戻れるように記憶しておく
+    localStorage.setItem(LAST_CATEGORY_STORAGE_KEY, category.id);
+
     // UIの表示を更新
     setActiveCategory(categoryList, category.id);
     setPageInfo(pageTitle, pageDescription, category);
     setSaveStatus(saveStatus, '');
+
+    // 段位道場ファイル作成ツールは既存JSONの読み込み/保存を行わない特殊カテゴリ。
+    // 通常の保存ボタンは隠し、専用の描画関数へ切り替える。
+    if (category.special === 'danGenerator') {
+        if (saveArea) saveArea.classList.add('hidden');
+        configs = {};
+        renderDanGenerator(settingsContainer);
+        return;
+    }
+
+    if (saveArea) saveArea.classList.remove('hidden');
 
     try {
         // 設定ファイルの読み込みと設定画面のレンダリング
@@ -160,6 +198,8 @@ async function selectDirectory() {
     const directory = await window.electronAPI.selectDirectory();
     if (!directory) return;
 
+    // ユーザーが明示的にフォルダを選び直した場合は先頭のカテゴリから開始する
+    currentCategory = null;
     await loadDirectory(directory);
 }
 
@@ -175,7 +215,9 @@ async function autoLoadTaikoNauts() {
         const cachedDirectory = localStorage.getItem('taikoNautsDirectory');
 
         if (cachedDirectory) {
-            await loadDirectory(cachedDirectory);
+            // アプリ起動時・window.location.reload()後のいずれもここを通るため、
+            // 直前に開いていたカテゴリへ復元する
+            await loadDirectory(cachedDirectory, { restoreCategory: true });
             return;
         }
 
@@ -189,7 +231,7 @@ async function autoLoadTaikoNauts() {
         }
 
         localStorage.setItem('taikoNautsDirectory', directory);
-        await loadDirectory(directory);
+        await loadDirectory(directory, { restoreCategory: true });
     } catch (error) {
         console.error('TaikoNauts-latestの自動読み込みに失敗しました', error);
         localStorage.removeItem('taikoNautsDirectory');
@@ -202,7 +244,7 @@ async function autoLoadTaikoNauts() {
 
 // 現在のカテゴリの内容を保存
 async function saveCurrentCategory() {
-    if (!selectedDirectory || !currentCategory) return;
+    if (!selectedDirectory || !currentCategory || currentCategory.special) return;
 
     const previousSkinPath = configs.gameConfig?.skinPath;
 

@@ -11,7 +11,10 @@
 ユーザーはTaikoNautsのインストールフォルダ(`TaikoNauts-latest`)を選択すると、
 そのフォルダ配下にある複数のJSON設定ファイル(`GameConfig.json` /
 `PlayerConfig.json` / `NamePlateConfig.json` / `SkinConfig.json` など)を、
-カテゴリ別のフォームで読み書きできます。
+カテゴリ別のフォームで読み書きできます。加えて、既存ファイルの読み書きを
+伴わない「ツール」的な画面(例: 段位道場のdan.jsonをフォームから作成して
+ダウンロードする機能)も、同じサイドバーの中に「特殊カテゴリ」として
+組み込まれています(詳細はアーキテクチャの節を参照)。
 
 技術スタック: Electron / バニラJS(ESモジュール) / HTML / CSS。フレームワーク
 (React等)は使用していません。ビルドツールも未使用で、`renderer/`配下は
@@ -33,6 +36,7 @@ renderer/
       settings.js         # カテゴリ内の設定項目のレンダリング/収集
       category.js         # サイドバーのカテゴリボタン一覧
       status.js           # ページタイトル・保存ステータス等の表示更新
+      danGenerator.js      # 段位道場dan.json作成ツールの専用画面(下記セクション8参照)
     fields/
       index.js             # type別にフィールド生成関数へディスパッチ
       base.js               # 全フィールド共通のDOM土台(ラベル+説明+コントロール)を生成
@@ -49,6 +53,8 @@ renderer/
     configs/
       index.js              # 全カテゴリ定義(configDefinitions配列)をまとめる
       game.js / player.js / namePlate.js / skin.js   # カテゴリごとの設定項目定義
+      danGenerator.js        # 段位道場dan.json作成ツールの「特殊カテゴリ」定義
+                             #   (files/fieldsを持たない。下記セクション8を参照)
 ```
 
 > 上記のパスは実際のファイル内の `import` 文から逆算した想定パスです。
@@ -243,6 +249,67 @@ export default 例Config;
 まだ復元対象に含まれていない。それらを保持したい場合は同様にlocalStorageへ
 保存し、`loadDirectory()` / `autoLoadTaikoNauts()`側で復元する処理を追加すること。
 
+### 8. 特殊カテゴリ(`special`) — 既存JSONを読み書きしないツール画面
+
+`configs/`の各カテゴリは基本的に「TaikoNautsフォルダ内の既存JSONを読み込み、
+編集し、同じ場所へ保存する」ことを前提にした`files`/`fields`構造だが、
+**段位道場のdan.json作成ツール**のように、当てはまらない画面もある:
+
+- 保存先の固定パスが存在しない(段位ごとにフォルダが分かれ、フォルダ名も
+  ユーザー次第のため)
+- 既存ファイルを読み込むのではなく、新規にデータを組み立てる
+- 「保存する」ではなく「ダウンロードする」という別の完了アクションを取る
+
+このようなカテゴリは、`files`を持たない代わりに`special`という文字列フラグを
+持つ定義にする:
+
+```js
+// configs/danGenerator.js
+export default {
+    id: 'danGenerator',
+    title: '段位道場ファイル作成',
+    description: 'dan.jsonを入力フォームから作成し、ダウンロードします。',
+    special: 'danGenerator'
+};
+```
+
+`app.js`の`selectCategory()`は`category.special`の値を見て分岐し、
+`special === 'danGenerator'`の場合は通常の`loadConfigs`/`renderSettings`を
+呼ばず、`ui/danGenerator.js`の`renderDanGenerator(settingsContainer)`を
+呼び出す。あわせて`#saveArea`(保存ボタン一式)を非表示にする
+(通常カテゴリへ戻る際は再表示する)。`saveCurrentCategory()`側にも
+`currentCategory.special`が真の場合は何もしないガードが入っている。
+
+`ui/danGenerator.js`は完全に自己完結したモジュールで、`selectedDirectory`や
+`window.electronAPI`のファイル書き込み系IPCには一切依存しない。生成した
+JSONは`Blob` + `URL.createObjectURL()` + `<a download>`のクリックという
+標準的なブラウザ機能だけでダウンロードさせている(Electronのメインプロセスを
+経由する`dialog.showSaveDialog`等は使っていない)。
+
+`ui/danGenerator.js`固有の入力仕様:
+- 曲(`danSongs`)・合格条件(`conditions`)はどちらも**最大3件まで**
+  (`MAX_SONGS` / `MAX_CONDITIONS`定数)。上限に達すると「+ 追加」ボタンが
+  `disabled`になる(`.button:disabled`のスタイルは`style.css`側で汎用定義)。
+  上限を変更したい場合はこの2定数を書き換えるだけでよい。
+- `danIndex`(段位名)・`difficulty`(難易度)・`conditions[].type`(合格条件の種類)・
+  `branchLock`(分岐ロック)は、いずれも`<select>`の表示ラベルに**英語名や数字の
+  接頭辞を付けない**方針(例: `danIndex`は「五級」であって「0: 五級」ではない、
+  `type`は「良の数」であって「良の数(Great)」ではない)。実際に保存される
+  JSONの値(`option.value`)は引き続き仕様通りの数値/英語文字列
+  (`0`, `'Great'`, `'None'`など)。新しい選択肢を追加するときもこの表記ルールに
+  合わせること。
+
+**同様の「ツール的な画面」を追加する場合の手順**:
+1. `configs/新ツール.js`に`special: '任意の識別子'`を持つ定義を作る(`files`は
+   書かない)
+2. `configs/index.js`の配列に追加する(サイドバーに自動で表示される)
+3. `ui/新ツール.js`に`render新ツール(container)`のような描画関数を実装する
+   (`fields/base.js`の`createFieldBase()`は流用できるが、`dataset.config` /
+   `dataset.key`は設定しない = 通常の保存フローに一切乗らない)
+4. `app.js`の`selectCategory()`に`category.special === '任意の識別子'`の分岐を
+   追加し、専用の描画関数を呼び出す。保存ボタン(`#saveArea`)を隠すかどうかも
+   ここで決める
+
 ## コーディング規約
 
 - **コメント・UI文言は日本語**で統一されている。新規コードもこれに合わせる。
@@ -254,25 +321,38 @@ export default 例Config;
   色を直書きせず、既存の変数を再利用するか新しい変数を`:root`に追加すること。
 - フィールドDOMの構造は`fields/base.js`の`createFieldBase()`が生成する
   `.setting-field > (.setting-info, .setting-control)`という構造に統一する。
-  独自レイアウトが必要な場合も、可能な限りこの構造・
+  独自レイアウトが必要な場合(`fontSelect.js`のように)も、可能な限りこの構造・
   クラス名(`setting-field` / `setting-label` / `setting-description` /
   `setting-control`)に合わせて`style.css`の既存スタイルを再利用する。
+- セクション見出し(カテゴリ内の各ファイル/グループのタイトル)は
+  `.settings-section-header`内に`<h3>`(必要なら`<p>`で補足説明)を置く構造に
+  統一する(`ui/settings.js`の`renderSettings()`、`ui/danGenerator.js`の
+  `createSectionElement()`を参照)。見出し用に新しいクラスを増やさないこと。
 
 ## 既知の注意点 / TODO候補
+
 - Windows専用の全ドライブ探索(`findTaikoNauts`)はmacOS/Linuxを考慮していない。
   クロスプラットフォーム対応が必要になった場合は`main.js`のドライブ文字列探索
   ロジックを見直すこと。
+- `danGenerator.js`の「曲ごと」条件で、各曲の閾値行に表示される曲パスのラベルは
+  行の再描画時にしか更新されない(曲のパス入力欄を編集しても、既に表示済みの
+  閾値ラベルはリアルタイムには追従しない)。実害は小さいが、双方向バインディングを
+  入れると改善できる。
 
 ## 変更時のチェックリスト
 
 新しい設定カテゴリやフィールド型を追加したら、以下を確認する:
 
-- [ ] `configs/`の定義に文法ミスがないか(`id` / `path or pathTemplate` / `fields`)
+- [ ] `configs/`の定義に文法ミスがないか(通常カテゴリなら`id` / `path or
+      pathTemplate` / `fields`。特殊カテゴリなら`id` / `special`)
 - [ ] 新しい`type`を使った場合、`fields/index.js`と`collectSettings`の両方に
       対応するcaseを追加したか
 - [ ] `dataset.config` / `dataset.key`が入力要素に正しく設定されているか
-      (保存時に値が回収されない典型的なバグ原因)
+      (保存時に値が回収されない典型的なバグ原因。ただし値を持たない疑似
+      フィールド・特殊カテゴリでは意図的に未設定でよい)
 - [ ] `pathTemplate`を使う場合、置換処理(`updatePlayerConfigPaths`等)を
       呼び出すタイミングが正しいか
+- [ ] 特殊カテゴリ(`special`)を追加した場合、`app.js`の`selectCategory()`に
+      分岐を追加し、`#saveArea`の表示/非表示を適切に切り替えたか
 - [ ] このAGENTS.mdの該当セクション(フィールド型一覧・ディレクトリ構成など)を
       更新したか
