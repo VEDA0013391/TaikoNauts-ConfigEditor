@@ -13,10 +13,14 @@ async function renderSettings(container, category, configs) {
 
         // セクションタイトルの生成
         if (file.title) {
-            const title = document.createElement('h3');
-            title.className = 'settings-section-title';
-            title.textContent = file.title;
-            section.append(title);
+            const header = document.createElement('div');
+            header.className = 'settings-section-header';
+
+            const heading = document.createElement('h3');
+            heading.textContent = file.title;
+            header.append(heading);
+
+            section.append(header);
         }
 
         // 各フィールドの生成と追加
