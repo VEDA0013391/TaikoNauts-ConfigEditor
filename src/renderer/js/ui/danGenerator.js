@@ -469,17 +469,18 @@ function buildDanJson() {
         json.conditions = state.conditions.map((condition) => ({
             type: condition.type,
             threshold: condition.mode === 'perSong'
-                ? condition.perSong.map((t) => ({ red: Number(t.red) || 0, gold: Number(t.gold) || 0 }))
-                : { red: Number(condition.single.red) || 0, gold: Number(condition.single.gold) || 0 }
+                ? condition.perSong.map((t) => ({
+                    red: Number(t.red) || 0,
+                    gold: Number(t.gold) || 0
+                }))
+                : [{
+                    red: Number(condition.single.red) || 0,
+                    gold: Number(condition.single.gold) || 0
+                }]
         }));
     }
 
     return json;
-}
-
-// ファイル名として使えない文字を除去する
-function sanitizeFileName(name) {
-    return name.replace(/[\\/:*?"<>|]/g, '').trim();
 }
 
 // ダウンロード
@@ -512,7 +513,7 @@ function buildDownloadSection() {
             const blob = new Blob([content], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
 
-            const fileName = `${sanitizeFileName(state.title) || 'dan'}.json`;
+            const fileName = 'dan.json';
 
             const link = document.createElement('a');
             link.href = url;

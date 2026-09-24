@@ -1,6 +1,6 @@
 {
     "name": "TaikoNauts-Config-Editor",
-    "version": "2026.924.1156",
+    "version": "2026.924.2140",
     "description": "TaikoNauts JSON configuration editor",
     "main": "src/main.js",
     "scripts": {
