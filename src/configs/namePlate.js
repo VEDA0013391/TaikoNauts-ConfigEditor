@@ -6,6 +6,7 @@ const namePlateConfig = {
     files: [
         {
             id: 'namePlateConfig',
+            pathTemplate: 'PlayerData/{userId}/NamePlateConfig.json',
             path: 'PlayerData/0/NamePlateConfig.json',
             fields: [
                 {

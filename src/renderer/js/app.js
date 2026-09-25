@@ -1,11 +1,12 @@
 import configDefinitions from '../../configs/index.js';
 import playerConfig from '../../configs/player.js';
 import skinConfig from '../../configs/skin.js';
+import namePlateConfig from '../../configs/namePlate.js';
 import { loadConfigs, saveConfigs } from './configManager.js';
 import { setSelectedDirectory, setSkinPath } from './fields/context.js';
 import { renderCategories, setActiveCategory } from './ui/category.js';
 import { renderSettings, collectSettings } from './ui/settings.js';
-import { renderDanGenerator } from './ui/danGenerator.js'; // ★ 追加: 段位道場ファイル作成ツール
+import { renderDanGenerator } from './ui/danGenerator.js';
 import { setPageInfo, setSaveStatus, setSaveButtonState, setDirectoryPath } from './ui/status.js';
 
 // 画面リロード後にどのカテゴリへ戻るかを覚えておくためのlocalStorageキー。
@@ -26,16 +27,22 @@ const pageDescription = document.getElementById('pageDescription');
 const settingsContainer = document.getElementById('settingsContainer');
 const saveStatus = document.getElementById('saveStatus');
 const saveBtn = document.getElementById('saveBtn');
-const saveArea = document.getElementById('saveArea'); // ★ 追加: 段位道場ツール表示時に隠す
+const saveArea = document.getElementById('saveArea');
 const directoryPath = document.getElementById('directoryPath');
 const selectDirectoryBtn = document.getElementById('selectDirectoryBtn');
 const welcomeSelectDirectoryBtn = document.getElementById('welcomeSelectDirectoryBtn');
-const userSelect = document.getElementById('userSelect'); // ★ 追加: ドロップダウン要素
-const userSelectWrapper = document.getElementById('userSelectWrapper'); // ★ 追加: ドロップダウン囲み要素
+const userSelect = document.getElementById('userSelect');
+const userSelectWrapper = document.getElementById('userSelectWrapper');
 
-// playerConfigのパステンプレートを更新する処理
-function updatePlayerConfigPaths(userId) {
+// player, nameplateConfigのパステンプレートを更新する処理
+function updateConfigPaths(userId) {
     playerConfig.files.forEach((file) => {
+        if (file.pathTemplate) {
+            file.path = file.pathTemplate.replace('{userId}', userId);
+        }
+    });
+
+    namePlateConfig.files.forEach((file) => {
         if (file.pathTemplate) {
             file.path = file.pathTemplate.replace('{userId}', userId);
         }
@@ -108,7 +115,7 @@ async function loadDirectory(directory, options = {}) {
 
         // ユーザー一覧ドロップダウンを読み込み, パスを初期化
         await loadUserDropdown(directory);
-        updatePlayerConfigPaths(currentUserId);
+        updateConfigPaths(currentUserId);
 
         // ウェルカム画面から設定画面に切り替え
         welcomeView.classList.add('hidden');
@@ -284,11 +291,13 @@ if (userSelect) {
         currentUserId = e.target.value;
 
         // パステンプレートを更新
-        updatePlayerConfigPaths(currentUserId);
+        updateConfigPaths(currentUserId);
 
-        // プレイヤー情報カテゴリを表示中の場合は設定を読み込み直して再描画
-        if (currentCategory && currentCategory.id === 'player') {
-            await selectCategory('player');
+        // 対象カテゴリを表示中の場合は設定を読み込み直して再描画
+        const reloadCategories = ['player', 'namePlate'];
+
+        if (currentCategory && reloadCategories.includes(currentCategory.id)) {
+            await selectCategory(currentCategory.id);
         }
     });
 }
